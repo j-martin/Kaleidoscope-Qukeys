@@ -89,16 +89,22 @@ int8_t Qukeys::searchQueue(uint8_t key_addr) {
 // flush a single entry from the head of the queue
 void Qukeys::flushKey(int8_t state, uint8_t keyswitch_state) {
   int8_t qukey_index = lookupQukey(key_queue_[0].addr);
-  if (qukey_index != QUKEY_NOT_FOUND) {
-    qukeys_[qukey_index].state = state;
-  }
+
   byte row = addr::row(key_queue_[0].addr);
   byte col = addr::col(key_queue_[0].addr);
   Key keycode = Key_NoKey;
-  if (state == QUKEY_STATE_ALTERNATE && qukey_index != QUKEY_NOT_FOUND) {
-    keycode = qukeys_[qukey_index].alt_keycode;
-  } else {
+  if (qukey_index == QUKEY_NOT_FOUND) {
     keycode = Layer.lookup(row, col);
+  } else {
+    qukeys_[qukey_index].state = qukey_state;
+    switch (qukey_state) {
+    case QUKEY_STATE_PRIMARY :
+      keycode = Layer.lookup(row, col);
+      break;
+    case QUKEY_STATE_ALTERNATE :
+      keycode = qukeys_[qukey_index].alt_keycode;
+      break;
+    }
   }
 
   // Since we're in the middle of the key scan, we don't necessarily
@@ -117,16 +123,6 @@ void Qukeys::flushKey(int8_t state, uint8_t keyswitch_state) {
   handleKeyswitchEvent(keycode, row, col, IS_PRESSED | INJECTED);
   // Now we send the report (if there were any changes)
   hid::sendKeyboardReport();
-
-  /* I think this is now unnecessary
-  // Now for the tricky bit; we need to know if the key was actually
-  // released, or if it's still being held. Otherwise, we'll screw up
-  // the next call to flushKey().
-  if (keyToggledOff(keyswitch_state)) {
-    handleKeyswitchEvent(keycode, row, col, keyswitch_state | INJECTED);
-    hid::sendKeyboardReport();
-  }
-  */
 
   // Last, we restore the current state of the report
   memcpy(Keyboard.keyReport.allkeys, hid_report.allkeys, sizeof(hid_report));
