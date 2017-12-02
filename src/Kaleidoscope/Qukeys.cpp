@@ -76,6 +76,7 @@ void Qukeys::enqueue(uint8_t key_addr) {
   key_queue_[key_queue_length_].addr = key_addr;
   key_queue_[key_queue_length_].flush_time = millis() + time_limit_;
   key_queue_length_++;
+  addr::mask(key_addr);
 }
 
 int8_t Qukeys::searchQueue(uint8_t key_addr) {
@@ -90,6 +91,7 @@ int8_t Qukeys::searchQueue(uint8_t key_addr) {
 // qukey_state: the state of the qukey
 // keyswitch_state: state of the switch (not the state being sent)
 void Qukeys::flushKey(int8_t qukey_state, uint8_t keyswitch_state) {
+  addr::unmask(key_queue_[0].addr);
   int8_t qukey_index = lookupQukey(key_queue_[0].addr);
 
   byte row = addr::row(key_queue_[0].addr);
@@ -179,16 +181,14 @@ Key Qukeys::keyScanHook(Key mapped_key, byte row, byte col, uint8_t key_state) {
 
   // If the key was just pressed:
   if (keyToggledOn(key_state)) {
-    // I think I may need to call maskKey() somewhere here, but I'm not sure
-    if (key_queue_length_) {
-      enqueue(key_addr);
-    } else {
-      // If it's not a qukey, proceed:
-      if (qukey_index == QUKEY_NOT_FOUND)
-        return mapped_key;
-      // Otherwise, queue the qukey:
-      enqueue(key_addr);
+    // If it's not a qukey, and the queue is empty, proceed:
+    if ((key_queue_length_ == 0) &&
+        (qukey_index == QUKEY_NOT_FOUND)) {
+      return mapped_key;
     }
+    // Otherwise, add the key to the queue:
+    enqueue(key_addr);
+    return Key_NoKey;
   }
 
   // In all other cases, we need to know if the key is queued already
@@ -209,25 +209,27 @@ Key Qukeys::keyScanHook(Key mapped_key, byte row, byte col, uint8_t key_state) {
 
   // Otherwise, the key is still pressed
 
-  // If the key is not a qukey:
+  // If the key is not a qukey (and it's being held):
   if (qukey_index == QUKEY_NOT_FOUND) {
     // If the key was pressed before the keys in the queue, proceed:
     if (queue_index == QUKEY_NOT_FOUND) {
       return mapped_key;
     } else {
+      // this is probably unnecessary because the key should be masked
       // suppress this keypress; it's still in the queue
       return Key_NoKey;
     }
   }
 
-  // qukeys that have already decided their keycode
-  if (qukeys_[qukey_index].state == QUKEY_STATE_PRIMARY)
+  // held qukeys that have already decided their keycode
+  switch (qukeys_[qukey_index].state) {
+  case QUKEY_STATE_PRIMARY:
     return mapped_key;
-  if (qukeys_[qukey_index].state == QUKEY_STATE_ALTERNATE)
+  case QUKEY_STATE_ALTERNATE:
     return qukeys_[qukey_index].alt_keycode;
-  // else state is undetermined; block. I could check timeouts here,
-  // but I'd rather do that in the pre-report hook
-  return Key_NoKey;
+  default:
+    return Key_NoKey;
+  }
 }
 
 void Qukeys::preReportHook(void) {
