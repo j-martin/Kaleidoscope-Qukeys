@@ -87,6 +87,8 @@ int8_t Qukeys::searchQueue(uint8_t key_addr) {
 }
 
 // flush a single entry from the head of the queue
+// qukey_state: the state of the qukey
+// keyswitch_state: state of the switch (not the state being sent)
 void Qukeys::flushKey(int8_t qukey_state, uint8_t keyswitch_state) {
   int8_t qukey_index = lookupQukey(key_queue_[0].addr);
 
