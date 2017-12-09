@@ -19,12 +19,12 @@
 #pragma once
 
 #include <Kaleidoscope.h>
-#include <addr.h>
+//#include <addr.h>
 
 // Maximum length of the pending queue
 #define QUKEYS_QUEUE_MAX 8
 // Total number of keys on the keyboard (assuming full grid)
-#define TOTAL_KEYS ROWS * COLS
+//#define TOTAL_KEYS ROWS * COLS
 
 // Boolean values for storing qukey state
 #define QUKEY_STATE_PRIMARY false
@@ -50,13 +50,13 @@ struct Qukey {
   Qukey(int8_t layer, byte row, byte col, Key alt_keycode);
 
   int8_t layer;
-  uint8_t addr;
+  KeyAddr addr;
   Key alt_keycode;
 };
 
 // Data structure for an entry in the key_queue
 struct QueueItem {
-  uint8_t addr;        // keyswitch coordinates
+  KeyAddr addr;        // keyswitch coordinates
   uint32_t flush_time; // time past which a qukey gets flushed
 };
 
@@ -95,21 +95,21 @@ class Qukeys : public KaleidoscopePlugin {
 
   // Qukey state bitfield
   static uint8_t qukey_state_[(TOTAL_KEYS) / 8 + ((TOTAL_KEYS) % 8 ? 1 : 0)];
-  static bool getQukeyState(uint8_t addr) {
+  static bool getQukeyState(KeyAddr addr) {
     return bitRead(qukey_state_[addr / 8], addr % 8);
   }
-  static void setQukeyState(uint8_t addr, boolean qukey_state) {
+  static void setQukeyState(KeyAddr addr, boolean qukey_state) {
     bitWrite(qukey_state_[addr / 8], addr % 8, qukey_state);
   }
 
-  static int8_t lookupQukey(uint8_t key_addr);
-  static void enqueue(uint8_t key_addr);
-  static int8_t searchQueue(uint8_t key_addr);
+  static int8_t lookupQukey(KeyAddr key_addr);
+  static void enqueue(KeyAddr key_addr);
+  static int8_t searchQueue(KeyAddr key_addr);
   static void flushKey(bool qukey_state, uint8_t keyswitch_state);
   static void flushQueue(int8_t index);
   static void flushQueue(void);
 
-  static Key keyScanHook(Key mapped_key, byte row, byte col, uint8_t key_state);
+  static Key keyScanHook(Key mapped_key, KeyAddr key_addr, uint8_t key_state);
   static void preReportHook(void);
   static void postReportHook(void) {}
   static void loopHook(bool post_clear);

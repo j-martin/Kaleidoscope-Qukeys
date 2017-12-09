@@ -2,9 +2,9 @@
 
 #include <Kaleidoscope.h>
 #include <Kaleidoscope-Qukeys.h>
-#include <Kaleidoscope-Macros.h>
+//#include <Kaleidoscope-Macros.h>
 
-enum { MACRO_TOGGLE_QUKEYS };
+//enum { MACRO_TOGGLE_QUKEYS };
 
 // *INDENT-OFF*
 KEYMAPS(
@@ -18,7 +18,7 @@ KEYMAPS(
     Key_LeftControl, Key_Backspace, Key_LeftGui, Key_LeftShift,
     ___,
 
-    M(MACRO_TOGGLE_QUKEYS), Key_6, Key_7, Key_8,     Key_9,      Key_0,         Key_skip,
+    Key_NoKey,              Key_6, Key_7, Key_8,     Key_9,      Key_0,         Key_skip,
     Key_Enter,              Key_Y, Key_U, Key_I,     Key_O,      Key_P,         Key_Equals,
                             Key_H, Key_J, Key_K,     Key_L,      Key_Semicolon, Key_Quote,
     Key_skip,               Key_N, Key_M, Key_Comma, Key_Period, Key_Slash,     Key_Minus,
@@ -29,15 +29,15 @@ KEYMAPS(
 // *INDENT-ON*
 
 // Defining a macro (on the "any" key: see above) to toggle Qukeys on and off
-const macro_t *macroAction(uint8_t macro_index, uint8_t key_state) {
-  switch (macro_index) {
-  case MACRO_TOGGLE_QUKEYS:
-    if (keyToggledOn(key_state))
-      Qukeys.toggle();
-    break;
-  }
-  return MACRO_NONE;
-}
+// const macro_t *macroAction(uint8_t macro_index, uint8_t key_state) {
+//   switch (macro_index) {
+//   case MACRO_TOGGLE_QUKEYS:
+//     if (keyToggledOn(key_state))
+//       Qukeys.toggle();
+//     break;
+//   }
+//   return MACRO_NONE;
+// }
 
 void setup() {
   // Use Qukeys
@@ -52,7 +52,7 @@ void setup() {
   Qukeys.setTimeout(200);
 
   // To toggle Qukeys off and on, we use a macro
-  Kaleidoscope.use(&Macros);
+  // Kaleidoscope.use(&Macros);
 
   Kaleidoscope.setup();
 }

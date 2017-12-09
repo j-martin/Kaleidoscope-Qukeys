@@ -32,7 +32,7 @@ namespace kaleidoscope {
 
 Qukey::Qukey(int8_t layer, byte row, byte col, Key alt_keycode) {
   this->layer = layer;
-  this->addr = addr::addr(row, col);
+  this->addr = keyaddr::addr(row, col);
   this->alt_keycode = alt_keycode;
 }
 
@@ -48,16 +48,14 @@ byte Qukeys::qukey_state_[] = {};
 // Empty constructor; nothing is stored at the instance level
 Qukeys::Qukeys(void) {}
 
-int8_t Qukeys::lookupQukey(uint8_t key_addr) {
+int8_t Qukeys::lookupQukey(KeyAddr key_addr) {
   if (key_addr == QUKEY_UNKNOWN_ADDR) {
     return QUKEY_NOT_FOUND;
   }
   for (int8_t i = 0; i < qukeys_count; i++) {
     if (qukeys[i].addr == key_addr) {
-      byte row = addr::row(key_addr);
-      byte col = addr::col(key_addr);
       if ((qukeys[i].layer == QUKEY_ALL_LAYERS) ||
-          (qukeys[i].layer == Layer.lookupActiveLayer(row, col))) {
+          (qukeys[i].layer == Layer.lookupActiveLayer(key_addr))) {
         return i;
       }
     }
@@ -65,7 +63,7 @@ int8_t Qukeys::lookupQukey(uint8_t key_addr) {
   return QUKEY_NOT_FOUND;
 }
 
-void Qukeys::enqueue(uint8_t key_addr) {
+void Qukeys::enqueue(KeyAddr key_addr) {
   if (key_queue_length_ == QUKEYS_QUEUE_MAX) {
     flushKey(QUKEY_STATE_PRIMARY, IS_PRESSED | WAS_PRESSED);
     flushQueue();
@@ -73,10 +71,10 @@ void Qukeys::enqueue(uint8_t key_addr) {
   key_queue_[key_queue_length_].addr = key_addr;
   key_queue_[key_queue_length_].flush_time = millis() + time_limit_;
   key_queue_length_++;
-  addr::mask(key_addr);
+  KeyboardHardware.maskKey(key_addr);
 }
 
-int8_t Qukeys::searchQueue(uint8_t key_addr) {
+int8_t Qukeys::searchQueue(KeyAddr key_addr) {
   for (int8_t i = 0; i < key_queue_length_; i++) {
     if (key_queue_[i].addr == key_addr)
       return i;
@@ -86,18 +84,16 @@ int8_t Qukeys::searchQueue(uint8_t key_addr) {
 
 // flush a single entry from the head of the queue
 void Qukeys::flushKey(bool qukey_state, uint8_t keyswitch_state) {
-  addr::unmask(key_queue_[0].addr);
+  KeyboardHardware.unMaskKey(key_queue_[0].addr);
   int8_t qukey_index = lookupQukey(key_queue_[0].addr);
   if (qukey_index != QUKEY_NOT_FOUND) {
     setQukeyState(key_queue_[0].addr, qukey_state);
   }
-  byte row = addr::row(key_queue_[0].addr);
-  byte col = addr::col(key_queue_[0].addr);
   Key keycode = Key_NoKey;
   if (qukey_state == QUKEY_STATE_ALTERNATE && qukey_index != QUKEY_NOT_FOUND) {
     keycode = qukeys[qukey_index].alt_keycode;
   } else {
-    keycode = Layer.lookup(row, col);
+    keycode = Layer.lookup(key_queue_[0].addr);
   }
 
   // Since we're in the middle of the key scan, we don't necessarily
@@ -114,7 +110,7 @@ void Qukeys::flushKey(bool qukey_state, uint8_t keyswitch_state) {
   // we can ignore it and don't start an infinite loop. It would be
   // nice if we could use key_state to also indicate which plugin
   // injected the key.
-  handleKeyswitchEvent(keycode, row, col, IS_PRESSED | INJECTED);
+  handleKeyswitchEvent(keycode, key_queue_[0].addr, IS_PRESSED | INJECTED);
   // Now we send the report (if there were any changes)
   hid::sendKeyboardReport();
 
@@ -123,7 +119,7 @@ void Qukeys::flushKey(bool qukey_state, uint8_t keyswitch_state) {
 
   // Last, if the key is still down, add its code back in
   if (! keyToggledOn(keyswitch_state))
-    handleKeyswitchEvent(keycode, row, col, IS_PRESSED | WAS_PRESSED | INJECTED);
+    handleKeyswitchEvent(keycode, key_queue_[0].addr, IS_PRESSED | WAS_PRESSED | INJECTED);
 
   // Shift the queue, so key_queue[0] is always the first key that gets processed
   for (byte i = 0; i < key_queue_length_; i++) {
@@ -156,7 +152,7 @@ void Qukeys::flushQueue(void) {
   }
 }
 
-Key Qukeys::keyScanHook(Key mapped_key, byte row, byte col, uint8_t key_state) {
+Key Qukeys::keyScanHook(Key mapped_key, KeyAddr key_addr, uint8_t key_state) {
 
   // If Qukeys is turned off, continue to next plugin
   if (!active_)
@@ -171,7 +167,6 @@ Key Qukeys::keyScanHook(Key mapped_key, byte row, byte col, uint8_t key_state) {
     return mapped_key;
 
   // get key addr & qukey (if any)
-  uint8_t key_addr = addr::addr(row, col);
   int8_t qukey_index = lookupQukey(key_addr);
 
   // If the key was just pressed:
