@@ -152,19 +152,21 @@ void Qukeys::flushQueue(void) {
   }
 }
 
-Key Qukeys::keyScanHook(Key mapped_key, KeyAddr key_addr, uint8_t key_state) {
+bool Qukeys::eventHandlerHook(Key mapped_key, const EventKey &event_key) {
+  uint8_t key_state = event_key.keyState_;
+  KeyAddr key_addr = event_key.key_addr;
 
   // If Qukeys is turned off, continue to next plugin
   if (!active_)
-    return mapped_key;
+    return true;
 
   // If the key was injected (from the queue being flushed), continue to next plugin
   if (key_state & INJECTED)
-    return mapped_key;
+    return true;
 
   // If the key isn't active, and didn't just toggle off, continue to next plugin
   if (!keyIsPressed(key_state) && !keyWasPressed(key_state))
-    return mapped_key;
+    return true;
 
   // get key addr & qukey (if any)
   int8_t qukey_index = lookupQukey(key_addr);
@@ -174,10 +176,11 @@ Key Qukeys::keyScanHook(Key mapped_key, KeyAddr key_addr, uint8_t key_state) {
     // If the queue is empty and the key isn't a qukey, proceed:
     if (key_queue_length_ == 0 &&
         qukey_index == QUKEY_NOT_FOUND)
-      return mapped_key;
+      return true;
     // Otherwise, queue the key and stop processing:
     enqueue(key_addr);
-    return Key_NoKey;
+    mapped_key = Key_NoKey;
+    return false;
   }
 
   // In all other cases, we need to know if the key is queued already
@@ -187,10 +190,10 @@ Key Qukeys::keyScanHook(Key mapped_key, KeyAddr key_addr, uint8_t key_state) {
   if (keyToggledOff(key_state)) {
     // If the key isn't in the key_queue, proceed
     if (queue_index == QUKEY_NOT_FOUND) {
-      return mapped_key;
+      return true;
     }
     flushQueue(queue_index);
-    return mapped_key;
+    return true;
   }
 
   // Otherwise, the key is still pressed
@@ -199,24 +202,27 @@ Key Qukeys::keyScanHook(Key mapped_key, KeyAddr key_addr, uint8_t key_state) {
   if (qukey_index == QUKEY_NOT_FOUND) {
     // If the key was pressed before the keys in the queue, proceed:
     if (queue_index == QUKEY_NOT_FOUND) {
-      return mapped_key;
+      return true;
     } else {
       // suppress this keypress; it's still in the queue
-      return Key_NoKey;
+      mapped_key = Key_NoKey;
+      return false;
     }
   }
 
   // If the qukey is not in the queue, check its state
   if (queue_index == QUKEY_NOT_FOUND) {
     if (getQukeyState(key_addr) == QUKEY_STATE_ALTERNATE) {
-      return qukeys[qukey_index].alt_keycode;
+      mapped_key = qukeys[qukey_index].alt_keycode;
+      return true;
     } else { // qukey_state == QUKEY_STATE_PRIMARY
-      return mapped_key;
+      return true;
     }
   }
   // else state is undetermined; block. I could check timeouts here,
   // but I'd rather do that in the pre-report hook
-  return Key_NoKey;
+  mapped_key = Key_NoKey;
+  return false;
 }
 
 void Qukeys::preReportHook(void) {
@@ -234,21 +240,13 @@ void Qukeys::preReportHook(void) {
   }
 }
 
-void Qukeys::loopHook(bool post_clear) {
-  if (!post_clear)
-    return preReportHook();
-}
-
-void Qukeys::begin() {
+void Qukeys::init() {
   // initializing the key_queue seems unnecessary, actually
   for (int8_t i = 0; i < QUKEYS_QUEUE_MAX; i++) {
     key_queue_[i].addr = QUKEY_UNKNOWN_ADDR;
     key_queue_[i].flush_time = 0;
   }
   key_queue_length_ = 0;
-
-  Kaleidoscope.useEventHandlerHook(keyScanHook);
-  Kaleidoscope.useLoopHook(loopHook);
 }
 
 } // namespace kaleidoscope {

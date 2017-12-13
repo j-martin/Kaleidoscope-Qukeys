@@ -70,7 +70,7 @@ class Qukeys : public KaleidoscopePlugin {
  public:
   Qukeys(void);
 
-  void begin(void) final;
+  void init();
   static void activate(void) {
     active_ = true;
   }
@@ -109,10 +109,9 @@ class Qukeys : public KaleidoscopePlugin {
   static void flushQueue(int8_t index);
   static void flushQueue(void);
 
-  static Key keyScanHook(Key mapped_key, KeyAddr key_addr, uint8_t key_state);
+  static bool eventHandlerHook(Key mapped_key, const EventKey &event_key);
   static void preReportHook(void);
   static void postReportHook(void) {}
-  static void loopHook(bool post_clear);
 };
 
 } // namespace kaleidoscope {
