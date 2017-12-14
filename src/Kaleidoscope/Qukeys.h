@@ -19,34 +19,33 @@
 #pragma once
 
 #include <Kaleidoscope.h>
-//#include <addr.h>
+
+namespace kaleidoscope {
 
 // Maximum length of the pending queue
-#define QUKEYS_QUEUE_MAX 8
-// Total number of keys on the keyboard (assuming full grid)
-//#define TOTAL_KEYS ROWS * COLS
+static constexpr byte QUKEYS_QUEUE_MAX = 8;
 
 // Boolean values for storing qukey state
-#define QUKEY_STATE_PRIMARY false
-#define QUKEY_STATE_ALTERNATE true
+static constexpr bool QUKEY_STATE_PRIMARY = false;
+static constexpr bool QUKEY_STATE_ALTERNATE = true;
 
 // Initialization addr value for empty key_queue. This seems to be
 // unnecessary, because we rely on keeping track of the lenght of the
 // queue, anyway.
-#define QUKEY_UNKNOWN_ADDR 0xFF
+static constexpr KeyAddr QUKEY_UNKNOWN_ADDR = 0xFF;
+
 // Value to return when no match is found in Qukeys.dict. A successful
 // match returns an index in the array, so this must be negative. Also
 // used for failed search of the key_queue.
-#define QUKEY_NOT_FOUND -1
+static constexpr int8_t QUKEY_NOT_FOUND = -1;
 // Wildcard value; this matches any layer
-#define QUKEY_ALL_LAYERS -1
-
-namespace kaleidoscope {
+static constexpr int8_t QUKEY_ALL_LAYERS = -1;
 
 // Data structure for an individual qukey
 struct Qukey {
  public:
   Qukey(void) {}
+  Qukey(int8_t layer, KeyAddr key_addr, Key alt_keycode);
   Qukey(int8_t layer, byte row, byte col, Key alt_keycode);
 
   int8_t layer;

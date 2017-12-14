@@ -21,14 +21,14 @@
 #include <kaleidoscope/hid.h>
 #include <MultiReport/Keyboard.h>
 
-#ifdef ARDUINO_VIRTUAL
-#define debug_print(...) printf(__VA_ARGS__)
-#else
-#define debug_print(...)
-#endif
-
 
 namespace kaleidoscope {
+
+Qukey::Qukey(int8_t layer, KeyAddr key_addr, Key alt_keycode) {
+  this->layer = layer;
+  this->addr = key_addr;
+  this->alt_keycode = alt_keycode;
+}
 
 Qukey::Qukey(int8_t layer, byte row, byte col, Key alt_keycode) {
   this->layer = layer;
