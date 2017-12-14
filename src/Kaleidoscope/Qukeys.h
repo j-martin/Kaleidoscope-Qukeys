@@ -87,6 +87,10 @@ class Qukeys : public KaleidoscopePlugin {
   static Qukey * qukeys;
   static uint8_t qukeys_count;
 
+  static bool eventHandlerHook(Key &mapped_key, const EventKey &event_key);
+  static void preReportHook(void);
+  static void postReportHook(void) {}
+
  private:
   static bool active_;
   static uint16_t time_limit_;
@@ -108,10 +112,6 @@ class Qukeys : public KaleidoscopePlugin {
   static void flushKey(bool qukey_state, uint8_t keyswitch_state);
   static void flushQueue(int8_t index);
   static void flushQueue(void);
-
-  static bool eventHandlerHook(Key mapped_key, const EventKey &event_key);
-  static void preReportHook(void);
-  static void postReportHook(void) {}
 };
 
 } // namespace kaleidoscope {

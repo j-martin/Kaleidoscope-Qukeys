@@ -152,7 +152,7 @@ void Qukeys::flushQueue(void) {
   }
 }
 
-bool Qukeys::eventHandlerHook(Key mapped_key, const EventKey &event_key) {
+bool Qukeys::eventHandlerHook(Key &mapped_key, const EventKey &event_key) {
   uint8_t key_state = event_key.keyState_;
   KeyAddr key_addr = event_key.key_addr;
 
