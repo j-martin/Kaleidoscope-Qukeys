@@ -86,9 +86,8 @@ class Qukeys : public KaleidoscopePlugin {
   static Qukey * qukeys;
   static uint8_t qukeys_count;
 
-  static bool eventHandlerHook(Key &mapped_key, const EventKey &event_key);
-  static void preReportHook(void);
-  static void postReportHook(void) {}
+  bool eventHandlerHook(Key &mapped_key, const EventKey &event_key);
+  void preReportHook(void);
 
  private:
   static bool active_;
