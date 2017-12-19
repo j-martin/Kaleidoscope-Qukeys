@@ -29,6 +29,7 @@
 
 
 namespace kaleidoscope {
+namespace qukeys {
 
 Qukey::Qukey(int8_t layer, byte row, byte col, Key alt_keycode) {
   this->layer = layer;
@@ -36,20 +37,20 @@ Qukey::Qukey(int8_t layer, byte row, byte col, Key alt_keycode) {
   this->alt_keycode = alt_keycode;
 }
 
-Qukey * Qukeys::qukeys;
-uint8_t Qukeys::qukeys_count = 0;
+Qukey * Plugin::qukeys;
+uint8_t Plugin::qukeys_count = 0;
 
-bool Qukeys::active_ = true;
-uint16_t Qukeys::time_limit_ = 250;
-QueueItem Qukeys::key_queue_[] = {};
-uint8_t Qukeys::key_queue_length_ = 0;
-byte Qukeys::qukey_state_[] = {};
-bool Qukeys::flushing_queue_ = false;
+bool Plugin::active_ = true;
+uint16_t Plugin::time_limit_ = 250;
+QueueItem Plugin::key_queue_[] = {};
+uint8_t Plugin::key_queue_length_ = 0;
+byte Plugin::qukey_state_[] = {};
+bool Plugin::flushing_queue_ = false;
 
 // Empty constructor; nothing is stored at the instance level
-Qukeys::Qukeys(void) {}
+Plugin::Plugin(void) {}
 
-int8_t Qukeys::lookupQukey(uint8_t key_addr) {
+int8_t Plugin::lookupQukey(uint8_t key_addr) {
   if (key_addr == QUKEY_UNKNOWN_ADDR) {
     return QUKEY_NOT_FOUND;
   }
@@ -66,7 +67,7 @@ int8_t Qukeys::lookupQukey(uint8_t key_addr) {
   return QUKEY_NOT_FOUND;
 }
 
-void Qukeys::enqueue(uint8_t key_addr) {
+void Plugin::enqueue(uint8_t key_addr) {
   if (key_queue_length_ == QUKEYS_QUEUE_MAX) {
     flushKey(QUKEY_STATE_PRIMARY, IS_PRESSED | WAS_PRESSED);
     flushQueue();
@@ -77,7 +78,7 @@ void Qukeys::enqueue(uint8_t key_addr) {
   addr::mask(key_addr);
 }
 
-int8_t Qukeys::searchQueue(uint8_t key_addr) {
+int8_t Plugin::searchQueue(uint8_t key_addr) {
   for (int8_t i = 0; i < key_queue_length_; i++) {
     if (key_queue_[i].addr == key_addr)
       return i;
@@ -86,7 +87,7 @@ int8_t Qukeys::searchQueue(uint8_t key_addr) {
 }
 
 // flush a single entry from the head of the queue
-void Qukeys::flushKey(bool qukey_state, uint8_t keyswitch_state) {
+void Plugin::flushKey(bool qukey_state, uint8_t keyswitch_state) {
   addr::unmask(key_queue_[0].addr);
   int8_t qukey_index = lookupQukey(key_queue_[0].addr);
   if (qukey_index != QUKEY_NOT_FOUND) {
@@ -144,7 +145,7 @@ void Qukeys::flushKey(bool qukey_state, uint8_t keyswitch_state) {
 // released. This means that all the keys ahead of it in the queue are
 // still being held, so first we flush them, then we flush the
 // released key (with different parameters).
-void Qukeys::flushQueue(int8_t index) {
+void Plugin::flushQueue(int8_t index) {
   if (index == QUKEY_NOT_FOUND)
     return;
   for (int8_t i = 0; i < index; i++) {
@@ -156,7 +157,7 @@ void Qukeys::flushQueue(int8_t index) {
 }
 
 // Flush all the non-qukey keys from the front of the queue
-void Qukeys::flushQueue(void) {
+void Plugin::flushQueue(void) {
   // flush keys until we find a qukey:
   while (key_queue_length_ > 0 &&
          lookupQukey(key_queue_[0].addr) == QUKEY_NOT_FOUND) {
@@ -164,7 +165,7 @@ void Qukeys::flushQueue(void) {
   }
 }
 
-Key Qukeys::keyScanHook(Key mapped_key, byte row, byte col, uint8_t key_state) {
+Key Plugin::keyScanHook(Key mapped_key, byte row, byte col, uint8_t key_state) {
 
   // If Qukeys is turned off, continue to next plugin
   if (!active_)
@@ -232,7 +233,7 @@ Key Qukeys::keyScanHook(Key mapped_key, byte row, byte col, uint8_t key_state) {
   return Key_NoKey;
 }
 
-void Qukeys::preReportHook(void) {
+void Plugin::preReportHook(void) {
   // If the qukey has been held longer than the time limit, set its
   // state to the alternate keycode and add it to the report
   uint16_t current_time = (uint16_t)millis();
@@ -247,12 +248,12 @@ void Qukeys::preReportHook(void) {
   }
 }
 
-void Qukeys::loopHook(bool post_clear) {
+void Plugin::loopHook(bool post_clear) {
   if (!post_clear)
     return preReportHook();
 }
 
-void Qukeys::begin() {
+void Plugin::begin() {
   // initializing the key_queue seems unnecessary, actually
   for (int8_t i = 0; i < QUKEYS_QUEUE_MAX; i++) {
     key_queue_[i].addr = QUKEY_UNKNOWN_ADDR;
@@ -264,6 +265,7 @@ void Qukeys::begin() {
   Kaleidoscope.useLoopHook(loopHook);
 }
 
+} // namespace qukeys {
 } // namespace kaleidoscope {
 
-kaleidoscope::Qukeys Qukeys;
+kaleidoscope::qukeys::Plugin Qukeys;

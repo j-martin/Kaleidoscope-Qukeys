@@ -42,6 +42,7 @@
 #define QUKEY_ALL_LAYERS -1
 
 namespace kaleidoscope {
+namespace qukeys {
 
 // Data structure for an individual qukey
 struct Qukey {
@@ -61,14 +62,14 @@ struct QueueItem {
 };
 
 // The plugin itself
-class Qukeys : public KaleidoscopePlugin {
+class Plugin : public KaleidoscopePlugin {
   // I could use a bitfield to get the state values, but then we'd
   // have to check the key_queue (there are three states). Or use a
   // second bitfield for the indeterminite state. Using a bitfield
   // would enable storing the qukey list in PROGMEM, but I don't know
   // if the added complexity is worth it.
  public:
-  Qukeys(void);
+  Plugin(void);
 
   void begin(void) final;
   static void activate(void) {
@@ -116,13 +117,14 @@ class Qukeys : public KaleidoscopePlugin {
   static void loopHook(bool post_clear);
 };
 
+} // namespace qukeys {
 } // namespace kaleidoscope {
 
-extern kaleidoscope::Qukeys Qukeys;
+extern kaleidoscope::qukeys::Plugin Qukeys;
 
 // macro for use in sketch file to simplify definition of qukeys
-#define QUKEYS(qukey_defs...) {						\
-  static kaleidoscope::Qukey qk_table[] = { qukey_defs };		\
-  Qukeys.qukeys = qk_table;						\
-  Qukeys.qukeys_count = sizeof(qk_table) / sizeof(kaleidoscope::Qukey); \
+#define QUKEYS(qukey_defs...) {							\
+  static kaleidoscope::qukeys::Qukey qk_table[] = { qukey_defs };		\
+  Qukeys.qukeys = qk_table;							\
+  Qukeys.qukeys_count = sizeof(qk_table) / sizeof(kaleidoscope::qukeys::Qukey); \
 }
