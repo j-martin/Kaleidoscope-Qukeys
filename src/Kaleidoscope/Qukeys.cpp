@@ -47,6 +47,8 @@ uint8_t Qukeys::key_queue_length_ = 0;
 byte Qukeys::qukey_state_[] = {};
 bool Qukeys::flushing_queue_ = false;
 
+constexpr uint16_t QUKEYS_GRACE_TIME_OFFSET = 10000;
+
 // Empty constructor; nothing is stored at the instance level
 Qukeys::Qukeys(void) {}
 
@@ -207,7 +209,7 @@ Key Qukeys::keyScanHook(Key mapped_key, byte row, byte col, uint8_t key_state) {
     // grace period timer, which will be checked in the pre-report hook
     if (grace_period_ > 0) {
       // Set start time to 10s in the future so we know we're in the grace period
-      key_queue_[queue_index].start_time = millis() + 10000;
+      key_queue_[queue_index].start_time = millis() + QUKEYS_GRACE_TIME_OFFSET;
       return Key_NoKey;
     }
     flushQueue(queue_index);
@@ -244,14 +246,23 @@ void Qukeys::preReportHook(void) {
   // If the qukey has been held longer than the time limit, set its
   // state to the alternate keycode and add it to the report
   uint16_t current_time = (uint16_t)millis();
+  for (byte i = 0; i < key_queue_length_; ++i) {
+    uint16_t grace_time = current_time - key_queue_[i].start_time;
+    if ((current_time - key_queue_[i].start_time) > 0)
+      continue;
+    // We've found a released qukey that may still be in the grace period
+    if ((current_time - key_queue_[i].start_time - QUKEYS_GRACE_TIME_OFFSET) > grace_period_) {
+      flushQueue(i);
+      // need to break out of the for loop here. It's not perfect, but the
+      // chances of getting two qukeys released simultaneously is quite small
+      break;
+      // Alternatively, we could search the queue in the opposite direction, and
+      // that would solve the problem!
+    }
+  }
   while (key_queue_length_ > 0) {
     if (lookupQukey(key_queue_[0].addr) == QUKEY_NOT_FOUND) {
       flushKey(QUKEY_STATE_PRIMARY, IS_PRESSED | WAS_PRESSED);
-    } else if ((current_time - key_queue_[0].start_time) < 0 ) {
-      // If start_time is in the future, that means we're in the grace period
-      if ((current_time - key_queue_[0].start_time - 10000) > grace_period_) {
-        flushKey(QUKEY_STATE_PRIMARY, IS_PRESSED | WAS_PRESSED);
-      }
     } else if ((current_time - key_queue_[0].start_time) > time_limit_) {
       flushKey(QUKEY_STATE_ALTERNATE, IS_PRESSED | WAS_PRESSED);
     } else {
