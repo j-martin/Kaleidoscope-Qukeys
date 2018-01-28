@@ -248,10 +248,10 @@ void Qukeys::preReportHook(void) {
   uint16_t current_time = (uint16_t)millis();
   for (byte i = key_queue_length - 1; i >= 0; --i) {
     uint16_t grace_time = current_time - key_queue_[i].start_time;
-    if ((current_time - key_queue_[i].start_time) > 0)
+    if (grace_time > 0)
       continue;
     // We've found a released qukey that may still be in the grace period
-    if ((current_time - key_queue_[i].start_time - QUKEYS_GRACE_TIME_OFFSET) > grace_period_) {
+    if ((grace_time + QUKEYS_GRACE_TIME_OFFSET) > grace_period_) {
       flushQueue(i);
       // We need to break out of the for loop here, because after calling
       // flushQueue(), the queue is no longer valid
