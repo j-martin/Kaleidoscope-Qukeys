@@ -246,13 +246,13 @@ void Qukeys::preReportHook(void) {
   // If the qukey has been held longer than the time limit, set its
   // state to the alternate keycode and add it to the report
   uint16_t current_time = (uint16_t)millis();
-  for (byte i = key_queue_length - 1; i >= 0; --i) {
-    uint16_t grace_time = current_time - key_queue_[i].start_time;
+  for (byte i = key_queue_length_; i > 0; --i) {
+    uint16_t grace_time = current_time - key_queue_[i - 1].start_time;
     if (grace_time > 0)
       continue;
     // We've found a released qukey that may still be in the grace period
     if ((grace_time + QUKEYS_GRACE_TIME_OFFSET) > grace_period_) {
-      flushQueue(i);
+      flushQueue(i - 1);
       // We need to break out of the for loop here, because after calling
       // flushQueue(), the queue is no longer valid
       break;
