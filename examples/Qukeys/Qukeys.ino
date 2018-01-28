@@ -50,6 +50,7 @@ void setup() {
     kaleidoscope::Qukey(0, 2, 4, Key_LeftShift)     // F/shift
   )
   Qukeys.setTimeout(200);
+  Qukeys.setGracePeriod(20);
 
   // To toggle Qukeys off and on, we use a macro
   Kaleidoscope.use(&Macros);

@@ -83,6 +83,9 @@ class Qukeys : public KaleidoscopePlugin {
   static void setTimeout(uint16_t time_limit) {
     time_limit_ = time_limit;
   }
+  static void setGracePeriod(uint8_t grace_period) {
+    grace_period_ = grace_period; // maybe check for sensible values?
+  }
 
   static Qukey * qukeys;
   static uint8_t qukeys_count;
@@ -90,6 +93,7 @@ class Qukeys : public KaleidoscopePlugin {
  private:
   static bool active_;
   static uint16_t time_limit_;
+  static uint8_t grace_period_; // shouldn't be more that 25ms
   static QueueItem key_queue_[QUKEYS_QUEUE_MAX];
   static uint8_t key_queue_length_;
   static bool flushing_queue_;

@@ -41,6 +41,7 @@ uint8_t Qukeys::qukeys_count = 0;
 
 bool Qukeys::active_ = true;
 uint16_t Qukeys::time_limit_ = 250;
+uint8_t Qukeys::grace_period_ = 0;
 QueueItem Qukeys::key_queue_[] = {};
 uint8_t Qukeys::key_queue_length_ = 0;
 byte Qukeys::qukey_state_[] = {};
@@ -202,6 +203,13 @@ Key Qukeys::keyScanHook(Key mapped_key, byte row, byte col, uint8_t key_state) {
     if (queue_index == QUKEY_NOT_FOUND) {
       return mapped_key;
     }
+    // Instead of just calling flushQueue() here, we need to start a (very short)
+    // grace period timer, which will be checked in the pre-report hook
+    if (grace_period_ > 0) {
+      // Set start time to 10s in the future so we know we're in the grace period
+      key_queue_[queue_index].start_time = millis() + 10000;
+      return Key_NoKey;
+    }
     flushQueue(queue_index);
     return mapped_key;
   }
@@ -239,6 +247,11 @@ void Qukeys::preReportHook(void) {
   while (key_queue_length_ > 0) {
     if (lookupQukey(key_queue_[0].addr) == QUKEY_NOT_FOUND) {
       flushKey(QUKEY_STATE_PRIMARY, IS_PRESSED | WAS_PRESSED);
+    } else if ((current_time - key_queue_[0].start_time) < 0 ) {
+      // If start_time is in the future, that means we're in the grace period
+      if ((current_time - key_queue_[0].start_time - 10000) > grace_period_) {
+        flushKey(QUKEY_STATE_PRIMARY, IS_PRESSED | WAS_PRESSED);
+      }
     } else if ((current_time - key_queue_[0].start_time) > time_limit_) {
       flushKey(QUKEY_STATE_ALTERNATE, IS_PRESSED | WAS_PRESSED);
     } else {
