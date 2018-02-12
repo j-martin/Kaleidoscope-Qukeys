@@ -57,7 +57,7 @@ struct Qukey {
 // Data structure for an entry in the key_queue
 struct QueueItem {
   uint8_t addr;        // keyswitch coordinates
-  uint16_t start_time; // time a queued key was pressed
+  int16_t start_time; // time a queued key was pressed
 };
 
 // The plugin itself
@@ -80,7 +80,7 @@ class Qukeys : public KaleidoscopePlugin {
   static void toggle(void) {
     active_ = !active_;
   }
-  static void setTimeout(uint16_t time_limit) {
+  static void setTimeout(int16_t time_limit) {
     time_limit_ = time_limit;
   }
   static void setGracePeriod(uint8_t grace_period) {
@@ -92,7 +92,7 @@ class Qukeys : public KaleidoscopePlugin {
 
  private:
   static bool active_;
-  static uint16_t time_limit_;
+  static int16_t time_limit_;
   static uint8_t grace_period_; // shouldn't be more that 25ms
   static QueueItem key_queue_[QUKEYS_QUEUE_MAX];
   static uint8_t key_queue_length_;

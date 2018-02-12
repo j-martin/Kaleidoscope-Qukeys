@@ -40,14 +40,14 @@ Qukey * Qukeys::qukeys;
 uint8_t Qukeys::qukeys_count = 0;
 
 bool Qukeys::active_ = true;
-uint16_t Qukeys::time_limit_ = 250;
+int16_t Qukeys::time_limit_ = 250;
 uint8_t Qukeys::grace_period_ = 0;
 QueueItem Qukeys::key_queue_[] = {};
 uint8_t Qukeys::key_queue_length_ = 0;
 byte Qukeys::qukey_state_[] = {};
 bool Qukeys::flushing_queue_ = false;
 
-constexpr uint16_t QUKEYS_GRACE_TIME_OFFSET = 10000;
+constexpr int16_t QUKEYS_GRACE_TIME_OFFSET = 10000;
 
 // Empty constructor; nothing is stored at the instance level
 Qukeys::Qukeys(void) {}
@@ -75,7 +75,7 @@ void Qukeys::enqueue(uint8_t key_addr) {
     flushQueue();
   }
   key_queue_[key_queue_length_].addr = key_addr;
-  key_queue_[key_queue_length_].start_time = (uint16_t)millis();
+  key_queue_[key_queue_length_].start_time = millis();
   key_queue_length_++;
   addr::mask(key_addr);
 }
@@ -155,7 +155,7 @@ void Qukeys::flushQueue(int8_t index) {
       break;
     flushKey(QUKEY_STATE_ALTERNATE, IS_PRESSED | WAS_PRESSED);
   }
-  flushKey(QUKEY_STATE_PRIMARY, WAS_PRESSED);
+  flushKey(QUKEY_STATE_PRIMARY, IS_PRESSED);
 }
 
 // Flush all the non-qukey keys from the front of the queue
@@ -207,7 +207,7 @@ Key Qukeys::keyScanHook(Key mapped_key, byte row, byte col, uint8_t key_state) {
     }
     // Instead of just calling flushQueue() here, we need to start a (very short)
     // grace period timer, which will be checked in the pre-report hook
-    if (grace_period_ > 0) {
+    if (grace_period_ > 0 && qukey_index != QUKEY_NOT_FOUND && queue_index < (key_queue_length_ - 1)) {
       // Set start time to 10s in the future so we know we're in the grace period
       key_queue_[queue_index].start_time = millis() + QUKEYS_GRACE_TIME_OFFSET;
       return Key_NoKey;
@@ -243,21 +243,23 @@ Key Qukeys::keyScanHook(Key mapped_key, byte row, byte col, uint8_t key_state) {
 }
 
 void Qukeys::preReportHook(void) {
-  // If the qukey has been held longer than the time limit, set its
-  // state to the alternate keycode and add it to the report
-  uint16_t current_time = (uint16_t)millis();
-  for (byte i = key_queue_length_; i > 0; --i) {
-    uint16_t grace_time = current_time - key_queue_[i - 1].start_time;
-    if (grace_time > 0)
-      continue;
-    // We've found a released qukey that may still be in the grace period
-    if ((grace_time + QUKEYS_GRACE_TIME_OFFSET) > grace_period_) {
-      flushQueue(i - 1);
-      // We need to break out of the for loop here, because after calling
-      // flushQueue(), the queue is no longer valid
-      break;
+  int16_t current_time = millis();
+  if (grace_period_ > 0) {
+    for (byte i = 0; i < key_queue_length_; ++i) {
+      int16_t grace_time = key_queue_[i].start_time - current_time;
+      if (grace_time > 0) {
+        // We've found a released qukey that may still be in the grace period
+        if ((QUKEYS_GRACE_TIME_OFFSET - grace_time) > grace_period_) {
+          flushQueue(i);
+          // We need to break out of the for loop here, because after calling
+          // flushQueue(), the queue is no longer valid
+          break;
+        }
+      }
     }
   }
+  // If the qukey has been held longer than the time limit, set its
+  // state to the alternate keycode and add it to the report
   while (key_queue_length_ > 0) {
     if (lookupQukey(key_queue_[0].addr) == QUKEY_NOT_FOUND) {
       flushKey(QUKEY_STATE_PRIMARY, IS_PRESSED | WAS_PRESSED);
