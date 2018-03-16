@@ -195,7 +195,7 @@ void Qukeys::flushQueue(int8_t index) {
 }
 
 // Flush all the non-qukey keys from the front of the queue
-void Qukeys::flushQueue(void) {
+void Qukeys::flushQueue() {
   // flush keys until we find a qukey:
   while (key_queue_length_ > 0 &&
          lookupQukey(key_queue_[0].addr) == QUKEY_NOT_FOUND) {
@@ -266,6 +266,7 @@ Key Qukeys::keyScanHook(Key mapped_key, byte row, byte col, uint8_t key_state) {
       return mapped_key;
     }
     flushQueue(queue_index);
+    flushQueue();
     return Key_NoKey;
   }
 
@@ -301,20 +302,13 @@ Key Qukeys::keyScanHook(Key mapped_key, byte row, byte col, uint8_t key_state) {
 void Qukeys::preReportHook(void) {
   // If the qukey has been held longer than the time limit, set its
   // state to the alternate keycode and add it to the report
-  uint16_t current_time = (uint16_t)millis();
   while (key_queue_length_ > 0) {
-    byte row = addr::row(key_queue_[0].addr);
-    byte col = addr::col(key_queue_[0].addr);
-    Key keycode = Layer.lookup(row, col);
-    bool is_dual_use = isDualUse(keycode);
-    if (lookupQukey(key_queue_[0].addr) != QUKEY_NOT_FOUND || is_dual_use) {
-      if ((current_time - key_queue_[0].start_time) > time_limit_) {
-        flushKey(QUKEY_STATE_ALTERNATE, IS_PRESSED | WAS_PRESSED);
-      } else {
-        break;
-      }
+    uint16_t current_time = millis();
+    if ((current_time - key_queue_[0].start_time) > time_limit_) {
+      flushKey(QUKEY_STATE_ALTERNATE, IS_PRESSED | WAS_PRESSED);
+      flushQueue();
     } else {
-      flushKey(QUKEY_STATE_PRIMARY, IS_PRESSED | WAS_PRESSED);
+      break;
     }
   }
 }
