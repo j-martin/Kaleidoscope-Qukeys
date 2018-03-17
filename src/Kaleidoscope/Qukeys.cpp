@@ -32,10 +32,19 @@
 
 namespace kaleidoscope {
 
+inline
 bool isDualUse(Key k) {
   if (k.raw < ranges::DU_FIRST || k.raw > ranges::DU_LAST)
     return false;
   return true;
+}
+
+inline
+bool isDualUse(byte key_addr) {
+  byte row = addr::row(key_addr);
+  byte col = addr::col(key_addr);
+  Key k = Layer.lookup(row, col);
+  return isDualUse(k);
 }
 
 Key getDualUsePrimaryKey(Key k) {
@@ -198,6 +207,7 @@ void Qukeys::flushQueue(int8_t index) {
 void Qukeys::flushQueue() {
   // flush keys until we find a qukey:
   while (key_queue_length_ > 0 &&
+         ! isDualUse(key_queue_[0].addr) &&
          lookupQukey(key_queue_[0].addr) == QUKEY_NOT_FOUND) {
     flushKey(QUKEY_STATE_PRIMARY, IS_PRESSED | WAS_PRESSED);
   }
