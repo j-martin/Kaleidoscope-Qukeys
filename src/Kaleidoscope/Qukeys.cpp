@@ -301,6 +301,7 @@ Key Qukeys::keyScanHook(Key mapped_key, byte row, byte col, uint8_t key_state) {
       return mapped_key;
     }
     flushQueue(queue_index);
+    delay(10);
     flushQueue();
     return Key_NoKey;
   }
