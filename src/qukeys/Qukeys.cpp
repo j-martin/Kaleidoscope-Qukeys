@@ -23,7 +23,7 @@ bool Plugin::keyswitchEventHook(KeyswitchEvent& event,
                                 kaleidoscope::Plugin*& caller) {
   // If this plugin isn't active:
   if (! plugin_active_) {
-    if (Qukey* qp = lookupQukey(event.key))
+    if (const Qukey* qp = lookupQukey(event.key))
       event.key = qp->primary;
     return true;
   }
@@ -35,10 +35,10 @@ bool Plugin::keyswitchEventHook(KeyswitchEvent& event,
   // If the key toggled on
   if (event.state.toggledOn()) {
 
-    // If the queue is empty or the pressed key is a qukey, add it to the queue; otherwise
-    // continue to the next event handler
-    Qukey* qp = nullptr;
-    if (key_queue_length_ > 0 || qp = lookupQukey(event.key)) {
+    // If the queue is not empty or the pressed key is a qukey, add it to the queue;
+    // otherwise continue to the next event handler
+    const Qukey* qp = lookupQukey(event.key);
+    if (key_queue_length_ > 0 || qp != nullptr) {
       enqueueKey(event.addr, qp);
       return false;
     } else {
@@ -67,6 +67,9 @@ bool Plugin::keyswitchEventHook(KeyswitchEvent& event,
       return false;
     } else {
       flushQueue(false);
+      // send release event for the just-released key
+      event.state = cKeyswitchState::released;
+      controller_.handleKeyswitchEvent(event, this);
       return true;
     }
   }
@@ -85,13 +88,13 @@ void Plugin::preScanHook() {
 
   // Next, we check the first key in the queue for delayed release
   int16_t diff_time = key_queue_[0].start_time - current_time;
-  if (diff_time > 0 && diff_time < (grace_period_offset - qukey_release_delay_)) {
+  if (diff_time > 0 && diff_time < int16_t(grace_period_offset - qukey_release_delay_)) {
     KeyswitchEvent event;
     event.addr  = key_queue_[0].addr;
     event.key   = cKey::clear;
     event.state = cKeyswitchState::released;
     flushQueue(false);
-    handleKeyswitchEvent(event, this); // send the release event
+    controller_.handleKeyswitchEvent(event, this); // send the release event
   }
 
   // Last, we check keys in the queue for hold timeout
@@ -105,32 +108,28 @@ void Plugin::preScanHook() {
 
 // returning a pointer is an experiment here; maybe its better to return the index
 inline
-Qukey* Plugin::lookupQukey(Key key) {
-  if (key.flavor() == KeyFlavor::plugin) {
-    // I feel like I can do better for testing for if it's a certain plugin type
-    if (key.plugin.keycode >= qukeys_range_start &&
-        key.plugin.keycode <= qukeys_range_end) {
-      byte qukey_index = key.plugin.keycode - qukeys_range_start;
-      if (qukey_index < qukey_count_)
-        return qukeys_[qukey_index];
-    }
+const Qukey* Plugin::lookupQukey(Key key) {
+  if (QukeysKey::testType(key)) {
+    byte qukey_index = QukeysKey(key).index();
+    if (qukey_index < qukey_count_)
+      return &qukeys_[qukey_index];
   }
   return nullptr;
 }
 
 inline
-Qukey* Plugin::lookupQukey(KeyAddr k) {
+const Qukey* Plugin::lookupQukey(KeyAddr k) {
   return lookupQukey(keymap_[k]);
 }
 
 inline
-Qukey* Plugin::lookupQukey(QueueEntry entry) {
+const Qukey* Plugin::lookupQukey(QueueEntry entry) {
   return lookupQukey(entry.addr);
 }
 
 // Add a keypress event to the queue while we wait for a qukey's state to be decided
 inline
-void Plugin::enqueueKey(KeyAddr k, Qukey* qp = nullptr) {
+void Plugin::enqueueKey(KeyAddr k, const Qukey* qp) {
   if (key_queue_length_ == queue_max) {
     flushQueue(false); // false => primary key
   }
@@ -167,24 +166,25 @@ QueueEntry Plugin::shiftQueue() {
 
 // flush the first key, with the specified keycode
 inline
-void Plugin::flushKey(bool alt_key = false) {
+void Plugin::flushKey(bool alt_key) {
   assert(key_queue_length_ > 0);
   QueueEntry entry = shiftQueue();
   // WARNING: queue_head_p_ doesn't reflect key_queue_[0] here
   KeyswitchEvent event;
   if (queue_head_p_ == nullptr) {
-    event.key = keymap_[key_queue_[0].addr];
+    event.key = keymap_[entry.addr];
   } else if (alt_key) {
     event.key = queue_head_p_->alternate;
   } else {
     event.key = queue_head_p_->primary;
   }
-  event.addr  = key_queue_[0].addr;
+  event.addr  = entry.addr;
   event.state = cKeyswitchState::pressed;
-  handleKeyswitchEvent(event, this);
+  controller_.handleKeyswitchEvent(event, this);
   //shiftQueue();
   queue_head_p_ = lookupQukey(key_queue_[0]);
   // WARNING: qukey_release_delay_ out of sync
+  delay(1);
 }
 
 inline
