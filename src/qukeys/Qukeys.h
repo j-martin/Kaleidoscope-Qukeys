@@ -65,7 +65,7 @@ class Plugin : public kaleidoscope::Plugin {
   bool keyswitchEventHook(KeyswitchEvent& event,
                           kaleidoscope::Plugin*& caller) override;
 
-  void preScanHook() override;
+  void preScanHook(uint16_t current_time) override;
 
  private:
   // An array of Qukey objects
