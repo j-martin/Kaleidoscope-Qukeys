@@ -109,7 +109,7 @@ void Plugin::preScanHook(uint16_t current_time) {
 // returning a pointer is an experiment here; maybe its better to return the index
 inline
 const Qukey* Plugin::lookupQukey(Key key) {
-  if (QukeysKey::testType(key)) {
+  if (QukeysKey::verify(key)) {
     byte qukey_index = QukeysKey(key).index();
     if (qukey_index < qukey_count_)
       return &qukeys_[qukey_index];
