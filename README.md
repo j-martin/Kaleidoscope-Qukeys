@@ -26,13 +26,19 @@ one keycode (i.e. symbol) when tapped, and a different keycode -- most likely a 
 ```
 KALEIDOSCOPE_INIT_PLUGINS(Qukeys);
 ```
-- Define some `Qukeys` of the format `Qukey(layer, row, col, alt_keycode)` (layers, rows and columns are all zero-indexed, rows are top to bottom and columns are left to right):
+
+- Define some `Qukeys` of the format `Qukey(layer, row, col, alt_keycode)`
+  (layers, rows and columns are all zero-indexed, rows are top to bottom and
+  columns are left to right, see coordinate reference below):
+
 ```
 QUKEYS(
   kaleidoscope::Qukey(0, 2, 1, Key_LeftGui),      // A/cmd
   kaleidoscope::Qukey(0, 2, 2, Key_LeftAlt),      // S/alt
   kaleidoscope::Qukey(0, 2, 3, Key_LeftControl),  // D/ctrl
-  kaleidoscope::Qukey(0, 2, 4, Key_LeftShift)     // F/shift
+  kaleidoscope::Qukey(0, 2, 4, Key_LeftShift),    // F/shift
+  kaleidoscope::Qukey(0, 1, 14, Key_LeftShift),   // P/shift
+  kaleidoscope::Qukey(0, 3, 15, Key_LeftShift)    // Minus/shift
 )
 ```
 
@@ -127,3 +133,32 @@ The time limit is mainly there so that a `Qukey` can be used as a modifier (in i
 alternate state) with a second input device (e.g. a mouse). It can be quite short (200ms
 is probably short enough) -- as long as your "taps" while typing are shorter than the time
 limit, you won't get any unintended alternate keycodes.
+
+## Coordinate / Key Reference
+
+### Left Board
+
+|     | 0            | 1         | 2          | 3              | 4           | 5       | 6        |
+|-----|--------------|-----------|------------|----------------|-------------|---------|----------|
+| 0   | Prog         | 1         | 2          | 3              | 4           | 5       | LED      |
+| 1   | Backtick     | Q         | W          | E              | R           | T       | Tab      |
+| 2   | PageUp       | A         | S          | D              | F           | G       |          |
+| 3   | PageDown     | Z         | X          | C              | V           | B       | Escape   |
+| 4   | LeftControl  | Backspace | LeftGui    | LeftShift      | ------      | ------  |          |
+
+### Right Board
+
+|     | 9            | 10        | 11         | 12             | 13          | 14      | 15       |
+| --- | ------------ | --------- | ---------- | -------------- | ----------- | ------- | -------- |
+| 0   | ANY          | 6         | 7          | 8              | 9           | 0       | NUMPAD   |
+| 1   | Enter        | Y         | U          | I              | O           | P       | Equals   |
+| 2   | H            | J         | K          | L              | Semicolon   | Quote   |          |
+| 3   | RightAlt     | N         | M          | Comma          | Period      | Slash   | Minus    |
+| 4   | RightShift   | LeftAlt   | Spacebar   | RightControl   |             |         |          |
+
+For example:
+
+```
+F => 2, 4
+M => 3, 11
+```
