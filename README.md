@@ -29,10 +29,14 @@ KALEIDOSCOPE_INIT_PLUGINS(Qukeys);
 
 - Define some `Qukeys` of the format `Qukey(layer, row, col, alt_keycode)`
   (layers, rows and columns are all zero-indexed, rows are top to bottom and
-  columns are left to right, see coordinate reference below):
+  columns are left to right):
+
+- For Keyboardio Model 1 key coordinates refer to [this header
+  file](https://github.com/keyboardio/Kaleidoscope-Hardware-Model01/blob/f469015346535cb864a340bf8eb317d268943248/src/Kaleidoscope-Hardware-Model01.h#L267-L279).
 
 ```
 QUKEYS(
+  //                  l, r, c, alt_keycode
   kaleidoscope::Qukey(0, 2, 1, Key_LeftGui),      // A/cmd
   kaleidoscope::Qukey(0, 2, 2, Key_LeftAlt),      // S/alt
   kaleidoscope::Qukey(0, 2, 3, Key_LeftControl),  // D/ctrl
@@ -63,48 +67,48 @@ likely to generate errors and out-of-order events.
 ### DualUse key definitions
 
 In addition to normal `Qukeys` described above, Kaleidoscope-Qukeys also treats
-DualUse keys in the keymap as `Qukeys`. This makes `Qukeys` a drop-in replacement 
+DualUse keys in the keymap as `Qukeys`. This makes `Qukeys` a drop-in replacement
 for the `DualUse` plugin, without the need to edit the keymap.
 
-	
-The plugin provides a number of macros one can use in keymap definitions:	
-	
-#### `CTL_T(key)`	
-	
-> A key that acts as the *left* `Control` when held, or used in conjunction with	
-> other keys, but as `key` when tapped in isolation. The `key` argument must be	
-> a plain old key, and can't have any modifiers or anything else applied.	
-	
-#### `ALT_T(key)`	
-	
-> A key that acts as the *left* `Alt` when held, or used in conjunction with	
-> other keys, but as `key` when tapped in isolation. The `key` argument must be	
-> a plain old key, and can't have any modifiers or anything else applied.	
-	
-#### `SFT_T(key)`	
-	
-> A key that acts as the *left* `Shift` when held, or used in conjunction with	
-> other keys, but as `key` when tapped in isolation. The `key` argument must be	
-> a plain old key, and can't have any modifiers or anything else applied.	
-	
-#### `GUI_T(key)`	
-	
-> A key that acts as the *left* `GUI` when held, or used in conjunction with	
-> other keys, but as `key` when tapped in isolation. The `key` argument must be	
-> a plain old key, and can't have any modifiers or anything else applied.	
-	
-#### `MT(mod, key)`	
-	
-> A key that acts as `mod` when held, or used in conjunction with other keys,	
-> but as `key` when tapped in isolation. The `key` argument must be a plain old	
-> key, and can't have any modifiers or anything else applied. The `mod` argument	
-> can be any of the modifiers, *left* or *right* alike.	
-	
-#### `LT(layer, key)`	
-	
-> A key that momentarily switches to `layer` when held, or used in conjunction	
-> with other keys, but as `key` when tapped in isolation. The `key` argument	
-> must be a plain old key, and can't have any modifiers or anything else	
+
+The plugin provides a number of macros one can use in keymap definitions:
+
+#### `CTL_T(key)`
+
+> A key that acts as the *left* `Control` when held, or used in conjunction with
+> other keys, but as `key` when tapped in isolation. The `key` argument must be
+> a plain old key, and can't have any modifiers or anything else applied.
+
+#### `ALT_T(key)`
+
+> A key that acts as the *left* `Alt` when held, or used in conjunction with
+> other keys, but as `key` when tapped in isolation. The `key` argument must be
+> a plain old key, and can't have any modifiers or anything else applied.
+
+#### `SFT_T(key)`
+
+> A key that acts as the *left* `Shift` when held, or used in conjunction with
+> other keys, but as `key` when tapped in isolation. The `key` argument must be
+> a plain old key, and can't have any modifiers or anything else applied.
+
+#### `GUI_T(key)`
+
+> A key that acts as the *left* `GUI` when held, or used in conjunction with
+> other keys, but as `key` when tapped in isolation. The `key` argument must be
+> a plain old key, and can't have any modifiers or anything else applied.
+
+#### `MT(mod, key)`
+
+> A key that acts as `mod` when held, or used in conjunction with other keys,
+> but as `key` when tapped in isolation. The `key` argument must be a plain old
+> key, and can't have any modifiers or anything else applied. The `mod` argument
+> can be any of the modifiers, *left* or *right* alike.
+
+#### `LT(layer, key)`
+
+> A key that momentarily switches to `layer` when held, or used in conjunction
+> with other keys, but as `key` when tapped in isolation. The `key` argument
+> must be a plain old key, and can't have any modifiers or anything else
 > applied.
 
 ## Design & Implementation
@@ -133,32 +137,3 @@ The time limit is mainly there so that a `Qukey` can be used as a modifier (in i
 alternate state) with a second input device (e.g. a mouse). It can be quite short (200ms
 is probably short enough) -- as long as your "taps" while typing are shorter than the time
 limit, you won't get any unintended alternate keycodes.
-
-## Coordinate / Key Reference
-
-### Left Board
-
-|     | 0            | 1         | 2          | 3              | 4           | 5       | 6        |
-|-----|--------------|-----------|------------|----------------|-------------|---------|----------|
-| 0   | Prog         | 1         | 2          | 3              | 4           | 5       | LED      |
-| 1   | Backtick     | Q         | W          | E              | R           | T       | Tab      |
-| 2   | PageUp       | A         | S          | D              | F           | G       |          |
-| 3   | PageDown     | Z         | X          | C              | V           | B       | Escape   |
-| 4   | LeftControl  | Backspace | LeftGui    | LeftShift      | ------      | ------  |          |
-
-### Right Board
-
-|     | 9            | 10        | 11         | 12             | 13          | 14      | 15       |
-| --- | ------------ | --------- | ---------- | -------------- | ----------- | ------- | -------- |
-| 0   | ANY          | 6         | 7          | 8              | 9           | 0       | NUMPAD   |
-| 1   | Enter        | Y         | U          | I              | O           | P       | Equals   |
-| 2   | H            | J         | K          | L              | Semicolon   | Quote   |          |
-| 3   | RightAlt     | N         | M          | Comma          | Period      | Slash   | Minus    |
-| 4   | RightShift   | LeftAlt   | Spacebar   | RightControl   |             |         |          |
-
-For example:
-
-```
-F => 2, 4
-M => 3, 11
-```
